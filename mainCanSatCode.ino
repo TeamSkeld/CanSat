@@ -261,8 +261,11 @@ HardwareSerial MySerial(1);
 
  */
 
+std::deque<short> velLog;
+short vm;
+float vk;
 
-short altLog[14400] = {0};
+
 
 
 
@@ -295,8 +298,13 @@ void loop() {
       LogData(",");
       Transmit_data(",");
       checkTelecommand();
-
-     
+      
+      if (velLog.size <5) {
+        checkLandingGearNoPop();
+      }
+      else if (velLog >= 5) {
+        checkLandingGear();
+      }
  
   }
 
@@ -485,6 +493,7 @@ void Transmit_data(String DeLim){
     MySerial.print(GPS.longitude, 4);MySerial.print(DeLim); MySerial.print(GPS.lon);MySerial.print(DeLim);
     MySerial.print(" Altitude: "); MySerial.print(DeLim); MySerial.print(GPS.altitude);MySerial.print(DeLim);
     MySerial.print(" Satellites: "); MySerial.print(DeLim); MySerial.println((int)GPS.satellites);
+    MySerial.print("Speed (knots): "); MySerial.print(DeLim); MySerial.println(GPS.speed); MySerial.print(DeLim);
 }
 
 void tone_gen(){
@@ -523,6 +532,7 @@ void Start_GPS(){
 }
 
 void checkTelecommand (){  
+
     if(MySerial.available()){
         command = MySerial.readStringUntil('\n');
         if(command.equals("alt0")){
@@ -548,27 +558,39 @@ void checkTelecommand (){
 }
 
 void checkLandingGear() {
-    //append altitude value to array
-  altLog[RecordCounter] = BMEAltitude;
+   //get speed in knots
+  vk = GPS.speed;
+  // roughly convert to m/s
+  vk = vk / 2;
+  //convert to short
+  vm = static_cast<short>(vk);
+  //add to queue
+  velLog.push_back(vm);
+  velLog.pop_front();
 
-  //check if the altitude has been decreasing steadily for the past 5 seconds
-  if (altLog[RecordCounter] < altLog[RecordCounter - 1]) {
-
-    if (altLog[RecordCounter - 1] < altLog[RecordCounter - 2]) {
-
-      if (altLog[RecordCounter - 2] < altLog[RecordCounter - 3]) {
-
-         if (altLog[RecordCounter - 3] < altLog[RecordCounter - 4]) {
-
-           activateLandingGear();
-        }
-
-      }
-
+  //check if past 5 values of speed are within the parachutes range
+  //if they are activates the landing gear
+  short rangeCheck = 0;
+  for (int i = 0; i < 5; ++i) {
+    if (7 < velLog[i] < 12) {
+      rangeCheck++;
     }
-
-  }
+  if (rangeCheck = 5)
+    activateLandingGear()
+  } 
 }
 void activateLandingGear() {
+  //TODO wire and program servos
   Serial.println("---LANDING GEAR ACTIVATED---");
+}
+
+void checkLandingGearNoPop() {
+  //get speed in knots
+  vk = GPS.speed;
+  // roughly convert to m/s
+  vk = vk / 2;
+  //convert to short
+  vm = static_cast<short>(vk);
+  //add to queue
+  velLog.push_back(vm);
 }
