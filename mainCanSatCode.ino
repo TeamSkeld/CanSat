@@ -279,12 +279,12 @@ void initialiseLandingGear() {
 	ESP32PWM::allocateTimer(2);
 	ESP32PWM::allocateTimer(3);
 	myservo1.setPeriodHertz(50);    // standard 50 hz servo
-	myservo1.attach(servoPin, 500, 2400); // attaches the servo on pin 18 to the servo object
+	myservo1.attach(servoPin1, 500, 2400); // attaches the servo on pin 18 to the servo object
 	// using default min/max of 1000us and 2000us
 	// different servos may require different min/max settings
 	// for an accurate 0 to 180 sweep
   myservo2.setPeriodHertz(50);
-	myservo2.attach(servoPin, 500, 2400);
+	myservo2.attach(servoPin2, 500, 2400);
 }
 
 
