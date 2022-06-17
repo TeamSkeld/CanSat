@@ -264,7 +264,28 @@ HardwareSerial MySerial(1);
 std::deque<short> velLog;
 short vm;
 float vk;
+#include <ESP32servo.h>
 
+Servo myservo1;
+Servo myservo2;
+short servoPin1 = 15;
+int pos = 0;
+short servoPin2 = 22;
+
+void initialiseLandingGear() {
+	// Allow allocation of all timers
+	ESP32PWM::allocateTimer(0);
+	ESP32PWM::allocateTimer(1);
+	ESP32PWM::allocateTimer(2);
+	ESP32PWM::allocateTimer(3);
+	myservo1.setPeriodHertz(50);    // standard 50 hz servo
+	myservo1.attach(servoPin, 500, 2400); // attaches the servo on pin 18 to the servo object
+	// using default min/max of 1000us and 2000us
+	// different servos may require different min/max settings
+	// for an accurate 0 to 180 sweep
+  myservo2.setPeriodHertz(50);
+	myservo2.attach(servoPin, 500, 2400);
+}
 
 
 
@@ -276,7 +297,7 @@ void setup() {
   Initialise_IMU();
   Initialse_SD_Writer();
   Initialse_GPS();
-   
+  initialiseLandingGear();
 
   tone_gen();
  
@@ -289,7 +310,7 @@ void loop() {
   Start_GPS();
 
   // approximately every 1 seconds or so, print out the current stats
-  if (millis() - timer > 1000) {
+  if (millis() - timer > 950) {
     timer = millis(); // reset the timer
  
       Read_BME();
@@ -494,6 +515,7 @@ void Transmit_data(String DeLim){
     MySerial.print(" Altitude: "); MySerial.print(DeLim); MySerial.print(GPS.altitude);MySerial.print(DeLim);
     MySerial.print(" Satellites: "); MySerial.print(DeLim); MySerial.println((int)GPS.satellites);
     MySerial.print("Speed (knots): "); MySerial.print(DeLim); MySerial.println(GPS.speed); MySerial.print(DeLim);
+
 }
 
 void tone_gen(){
@@ -579,9 +601,18 @@ void checkLandingGear() {
     activateLandingGear()
   } 
 }
+
 void activateLandingGear() {
   //TODO wire and program servos
   Serial.println("---LANDING GEAR ACTIVATED---");
+  MySerial.print("LANDING GEAR ACTIVATED \n EXPECT DELAY IN DATA")
+  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
+		// in steps of 1 degree
+		myservo1.write(pos);    // tell servo to go to position in variable 'pos'
+    myservo2.write(pos);    
+		delay(15);             // waits 15ms for the servo to reach the position
+	}
+
 }
 
 void checkLandingGearNoPop() {
